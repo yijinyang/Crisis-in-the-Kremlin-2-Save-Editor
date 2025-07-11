@@ -1,0 +1,1 @@
+python -m PyInstaller CitK2-Save-Editor.py --onefile --windowed --noconsole
