@@ -1,5 +1,5 @@
-('G:\\tkinter projects\\Crisis in the Kremlin 2 Save '
- 'Editor\\build\\CitK2-Save-Editor\\PYZ-00.pyz',
+('G:\\tkinter '
+ 'projects\\Crisis-in-the-Kremlin-2-Save-Editor\\build\\CitK2-Save-Editor\\PYZ-00.pyz',
  [('_compat_pickle', 'C:\\Python311\\Lib\\_compat_pickle.py', 'PYMODULE'),
   ('_compression', 'C:\\Python311\\Lib\\_compression.py', 'PYMODULE'),
   ('_py_abc', 'C:\\Python311\\Lib\\_py_abc.py', 'PYMODULE'),
