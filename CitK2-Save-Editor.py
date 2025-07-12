@@ -10,7 +10,7 @@ class CITK2SaveEditor:
         self.root = root
         self.root.title("Crisis in the Kremlin 2 Save Editor")
         self.root.geometry("1400x800")
-        self.root.minsize(1200, 700)
+        self.root.minsize(1200, 700)  # Set minimum size
         self.root.configure(bg="#8B0000")
         
         # Define variables and their display names
@@ -76,6 +76,12 @@ class CITK2SaveEditor:
             'charLevel': ['Diplomacy', 'Intrigue', 'Thrift'],
             'charExp': ['Diplomacy', 'Intrigue', 'Thrift']
         }
+        
+        # Define possible values for combo boxes
+        self.country_options = ["Russia", "Ukraine", "Belarus", "Kazakhstan", "Uzbekistan", "Georgia", "Azerbaijan", "Lithuania", "Estonia", "Latvia", "Moldova", "Kyrgyzstan", "Tajikistan", "Armenia", "Turkmenistan"]
+        self.position_options = ["ChairmanOfTheSupremeCouncil", "SecondSecretary", "ChairmanOfTheCouncilOfMinisters", "ForeignSecretary", "ChairmanOfTheKGB", "MinisterOfDefense", "MinisterOfIndustry", "MinisterForYouthAffairs", "MinisterOfFinance", "GRU", "MinisterOfAgriculture", "MinisterOfEducation", "MinisterOfInternalAffairs",None]
+        self.status_options = ["Alive", "Dead", "Imprisoned", "Exiled", "Retired"]
+        self.trait_options = ["ProReformist", "Compromise", "GlasnostActivist", "Schemer", "ProModerate", "Partocrat", "InefficientManager", "Atlantophobe", "Unambitious", "Uncompromising", "ProNationalDemocrat", "Monarchist", "Voluntarist", "Economical", "StrongArm", "Peoplefavorite", "EffectiveManager", "Hedonist", "Chauvinist", "ProMarket", "Ascetic", "Industrialist", "Idealist", "Peaceful", "Atlantophile", "ProLiberalDemocrat", "Technocrat", "Orientalist", "NuclearScientist", "ConspiracyTheorist", "Radical", "Intelligent", "ProConservative", "RocketBuilder", "ProNeostalinist", "ProSocialPatriot", "Dissident", "Maoist", "ProNeotrotskist"]
         
         # Create GUI elements
         self.create_widgets()
@@ -155,6 +161,47 @@ class CITK2SaveEditor:
         reset_btn.pack(side="left", padx=20, pady=5, expand=True)
 
     def create_main_tab(self, parent):
+        # Create frame for action buttons
+        action_frame = ttk.Frame(parent, style="Gold.TFrame")
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Add action buttons
+        loyal_btn = ttk.Button(
+            action_frame, 
+            text="Loyal to the Cause", 
+            command=self.loyal_to_cause,
+            style="Gold.TButton",
+            width=20
+        )
+        loyal_btn.pack(side="left", padx=5, pady=5, expand=True)
+        
+        clear_debt_btn = ttk.Button(
+            action_frame, 
+            text="Clear Debt", 
+            command=self.clear_debt,
+            style="Gold.TButton",
+            width=20
+        )
+        clear_debt_btn.pack(side="left", padx=5, pady=5, expand=True)
+        
+        fall_usa_btn = ttk.Button(
+            action_frame, 
+            text="Fall of the USA", 
+            command=self.fall_of_usa,
+            style="Gold.TButton",
+            width=20
+        )
+        fall_usa_btn.pack(side="left", padx=5, pady=5, expand=True)
+        
+        breakthrough_btn = ttk.Button(
+            action_frame, 
+            text="Scientific Breakthrough", 
+            command=self.scientific_breakthrough,
+            style="Gold.TButton",
+            width=20
+        )
+        breakthrough_btn.pack(side="left", padx=5, pady=5, expand=True)
+        
         # Create scrollable canvas
         canvas = tk.Canvas(parent, bg="#B22222", highlightthickness=0)
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
@@ -221,8 +268,27 @@ class CITK2SaveEditor:
         list_frame = ttk.Frame(paned_window, style="Gold.TFrame", width=200)
         paned_window.add(list_frame, weight=1)
         
-        # Country list label
-        ttk.Label(list_frame, text="Countries", style="Gold.TLabel", font=("Arial", 10, "bold")).pack(pady=5)
+        # Country list label and search bar
+        search_frame = ttk.Frame(list_frame, style="Gold.TFrame")
+        search_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(
+            search_frame, 
+            text="Search Countries:", 
+            style="Gold.TLabel"
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.country_search_var = tk.StringVar()
+        country_search_entry = ttk.Entry(
+            search_frame, 
+            textvariable=self.country_search_var,
+            width=15,
+            style="Gold.TEntry"
+        )
+        country_search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        country_search_entry.bind("<KeyRelease>", self.filter_countries)
+        
+        ttk.Label(list_frame, text="Countries", style="Gold.TLabel", font=("Arial", 10, "bold")).pack(pady=(0, 5))
         
         # Country listbox with scrollbar
         list_scroll = ttk.Scrollbar(list_frame)
@@ -236,7 +302,7 @@ class CITK2SaveEditor:
             selectbackground="#8B0000",
             selectforeground="#FFD700",
             font=("Arial", 9),
-            selectmode=tk.SINGLE  # Ensure single selection mode
+            selectmode=tk.SINGLE
         )
         self.country_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         list_scroll.config(command=self.country_listbox.yview)
@@ -266,14 +332,51 @@ class CITK2SaveEditor:
         attr_canvas.pack(side="left", fill="both", expand=True)
         attr_scroll.pack(side="right", fill="y")
         
+        # Create frame for country action buttons (VERTICAL LAYOUT)
+        country_actions_frame = ttk.Frame(attr_frame, style="Gold.TFrame")
+        country_actions_frame.pack(side="right", fill=tk.Y, padx=(5, 0), pady=5)
+        
+        # Add country action buttons (packed vertically)
+        diplo_btn = ttk.Button(
+            country_actions_frame, 
+            text="Diplomatic Superparty", 
+            command=self.diplomatic_superparty,
+            style="Gold.TButton"
+        )
+        diplo_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        mass_align_btn = ttk.Button(
+            country_actions_frame, 
+            text="Mass Alignment", 
+            command=self.mass_alignment,
+            style="Gold.TButton"
+        )
+        mass_align_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        liberal0_btn = ttk.Button(
+            country_actions_frame, 
+            text="Liberalization Vector 0", 
+            command=self.liberalization_vector_0,
+            style="Gold.TButton"
+        )
+        liberal0_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        liberal_res_btn = ttk.Button(
+            country_actions_frame, 
+            text="Liberal Resurrection",  
+            command=self.liberalization_vector_100,
+            style="Gold.TButton"
+        )
+        liberal_res_btn.pack(fill=tk.X, padx=2, pady=2)
+        
         # Save country button
         save_btn = ttk.Button(
-            attr_frame, 
+            country_actions_frame, 
             text="Save Country Changes", 
             command=self.save_country,
             style="Gold.TButton"
         )
-        save_btn.pack(side="bottom", pady=5)
+        save_btn.pack(fill=tk.X, padx=2, pady=2)
 
     def create_characters_tab(self, parent):
         # Create paned window for character list and attributes
@@ -284,8 +387,27 @@ class CITK2SaveEditor:
         list_frame = ttk.Frame(paned_window, style="Gold.TFrame", width=200)
         paned_window.add(list_frame, weight=1)
         
-        # Character list label
-        ttk.Label(list_frame, text="Characters", style="Gold.TLabel", font=("Arial", 10, "bold")).pack(pady=5)
+        # Character list label and search bar
+        search_frame = ttk.Frame(list_frame, style="Gold.TFrame")
+        search_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Label(
+            search_frame, 
+            text="Search Characters:", 
+            style="Gold.TLabel"
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.character_search_var = tk.StringVar()
+        character_search_entry = ttk.Entry(
+            search_frame, 
+            textvariable=self.character_search_var,
+            width=15,
+            style="Gold.TEntry"
+        )
+        character_search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        character_search_entry.bind("<KeyRelease>", self.filter_characters)
+        
+        ttk.Label(list_frame, text="Characters", style="Gold.TLabel", font=("Arial", 10, "bold")).pack(pady=(0, 5))
         
         # Character listbox with scrollbar
         list_scroll = ttk.Scrollbar(list_frame)
@@ -299,7 +421,7 @@ class CITK2SaveEditor:
             selectbackground="#8B0000",
             selectforeground="#FFD700",
             font=("Arial", 9),
-            selectmode=tk.SINGLE  # Ensure single selection mode
+            selectmode=tk.SINGLE
         )
         self.character_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         list_scroll.config(command=self.character_listbox.yview)
@@ -329,23 +451,75 @@ class CITK2SaveEditor:
         attr_canvas.pack(side="left", fill="both", expand=True)
         attr_scroll.pack(side="right", fill="y")
         
-        # Traits instructions
-        traits_frame = ttk.Frame(attr_frame, style="Red.TFrame")
-        traits_frame.pack(side="bottom", fill="x", pady=5)
-        ttk.Label(
-            traits_frame, 
-            text="Traits: Enter as comma-separated values (e.g., Trait1,Trait2)",
-            style="Gold.TLabel"
-        ).pack(padx=5, pady=2)
+        # Create frame for character action buttons (VERTICAL LAYOUT)
+        char_actions_frame = ttk.Frame(attr_frame, style="Gold.TFrame")
+        char_actions_frame.pack(side="right", fill=tk.Y, padx=(5, 0), pady=5)
+        
+        # Add character action buttons (packed vertically)
+        assassinate_btn = ttk.Button(
+            char_actions_frame, 
+            text="Assassinate", 
+            command=lambda: self.set_character_status("Dead"),
+            style="Gold.TButton"
+        )
+        assassinate_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        imprison_btn = ttk.Button(
+            char_actions_frame, 
+            text="Imprison", 
+            command=lambda: self.set_character_status("Imprisoned"),
+            style="Gold.TButton"
+        )
+        imprison_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        exile_btn = ttk.Button(
+            char_actions_frame, 
+            text="Exile", 
+            command=lambda: self.set_character_status("Exiled"),
+            style="Gold.TButton"
+        )
+        exile_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        retire_btn = ttk.Button(
+            char_actions_frame, 
+            text="Retire", 
+            command=lambda: self.set_character_status("Retired"),
+            style="Gold.TButton"
+        )
+        retire_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        resurrect_btn = ttk.Button(
+            char_actions_frame, 
+            text="Resurrect", 
+            command=lambda: self.set_character_status("Alive"),
+            style="Gold.TButton"
+        )
+        resurrect_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        empower_btn = ttk.Button(
+            char_actions_frame, 
+            text="Empower", 
+            command=lambda: self.set_character_power(100),
+            style="Gold.TButton"
+        )
+        empower_btn.pack(fill=tk.X, padx=2, pady=2)
+        
+        isolate_btn = ttk.Button(
+            char_actions_frame, 
+            text="Isolate", 
+            command=lambda: self.set_character_power(0),
+            style="Gold.TButton"
+        )
+        isolate_btn.pack(fill=tk.X, padx=2, pady=2)
         
         # Save character button
         save_btn = ttk.Button(
-            attr_frame, 
+            char_actions_frame, 
             text="Save Character Changes", 
             command=self.save_character,
             style="Gold.TButton"
         )
-        save_btn.pack(side="bottom", pady=5)
+        save_btn.pack(fill=tk.X, padx=2, pady=2)
 
     def configure_styles(self):
         style = ttk.Style()
@@ -382,6 +556,13 @@ class CITK2SaveEditor:
         style.configure("Gold.TCheckbutton", 
                        background="#DAA520", 
                        foreground="#8B0000")
+        
+        # Combobox styles
+        style.configure("Gold.TCombobox", 
+                       fieldbackground="#FFD700", 
+                       foreground="#8B0000",
+                       selectbackground="#FFD700",
+                       selectforeground="#8B0000")
 
     def validate_float(self, value):
         """Validate float input"""
@@ -402,6 +583,42 @@ class CITK2SaveEditor:
             return True
         except ValueError:
             return False
+        
+    def filter_countries(self, event=None):
+        """Filter country list based on search text"""
+        if not hasattr(self, 'all_countries'):
+            return
+            
+        search_text = self.country_search_var.get().lower()
+        self.country_listbox.delete(0, tk.END)
+        
+        if not search_text:
+            # Show all countries if search is empty
+            for country in self.all_countries:
+                self.country_listbox.insert(tk.END, country)
+        else:
+            # Filter countries that match search text
+            for country in self.all_countries:
+                if search_text in country.lower():
+                    self.country_listbox.insert(tk.END, country)
+
+    def filter_characters(self, event=None):
+        """Filter character list based on search text"""
+        if not hasattr(self, 'all_characters'):
+            return
+            
+        search_text = self.character_search_var.get().lower()
+        self.character_listbox.delete(0, tk.END)
+        
+        if not search_text:
+            # Show all characters if search is empty
+            for character in self.all_characters:
+                self.character_listbox.insert(tk.END, character)
+        else:
+            # Filter characters that match search text
+            for character in self.all_characters:
+                if search_text in character.lower():
+                    self.character_listbox.insert(tk.END, character)
 
     def open_file(self):
         """Open a CITK2 save file from default directory"""
@@ -443,14 +660,16 @@ class CITK2SaveEditor:
             
             # Populate country list
             if "countries" in data:
+                self.all_countries = list(data["countries"].keys())  # Store for filtering
                 self.country_listbox.delete(0, tk.END)
-                for country_tag in data["countries"]:
+                for country_tag in self.all_countries:
                     self.country_listbox.insert(tk.END, country_tag)
             
             # Populate character list
             if "characters" in data:
+                self.all_characters = list(data["characters"].keys())  # Store for filtering
                 self.character_listbox.delete(0, tk.END)
-                for character_name in data["characters"]:
+                for character_name in self.all_characters:
                     self.character_listbox.insert(tk.END, character_name)
             
             messagebox.showinfo("Success", "Comrade! File loaded successfully!")
@@ -702,11 +921,24 @@ class CITK2SaveEditor:
                 var = tk.BooleanVar(value=value)
                 entry = ttk.Checkbutton(frame, variable=var, style="Gold.TCheckbutton")
                 entry.var = var  # Store var for later access
-            elif isinstance(value, list) and attr == "traits":
-                # Special handling for traits list
-                traits_str = ",".join(value)
-                entry = ttk.Entry(frame, width=20, style="Gold.TEntry")
-                entry.insert(0, traits_str)
+            elif attr == "homeLand":
+                combo = ttk.Combobox(frame, width=18, style="Gold.TCombobox")
+                combo['values'] = self.country_options
+                combo.set(value if value else "")
+                entry = combo
+            elif attr == "desiredPosition":
+                combo = ttk.Combobox(frame, width=18, style="Gold.TCombobox")
+                combo['values'] = self.position_options
+                combo.set(value if value else "")
+                entry = combo
+            elif attr == "status":
+                combo = ttk.Combobox(frame, width=18, style="Gold.TCombobox")
+                combo['values'] = self.status_options
+                combo.set(value if value else "")
+                entry = combo
+            elif attr == "traits":
+                # Skip here, handle separately below
+                continue
             elif value is None:
                 entry = ttk.Entry(frame, width=20, style="Gold.TEntry")
                 entry.insert(0, "null")
@@ -716,6 +948,38 @@ class CITK2SaveEditor:
                 
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self.character_entries[attr] = entry
+        
+        # Add traits section with four combo boxes
+        traits_frame = ttk.Frame(self.character_attr_frame, style="Gold.TFrame")
+        traits_frame.pack(fill=tk.X, padx=5, pady=5)
+        ttk.Label(
+            traits_frame, 
+            text="Traits:", 
+            style="Gold.TLabel",
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w")
+        
+        self.trait_combos = []
+        traits = char_data.get("traits", [])
+        
+        # Ensure we have exactly 4 traits (pad with empty if needed)
+        if len(traits) < 4:
+            traits += [""] * (4 - len(traits))
+        elif len(traits) > 4:
+            traits = traits[:4]
+        
+        for i, trait in enumerate(traits, 1):
+            frame = ttk.Frame(self.character_attr_frame, style="Red.TFrame")
+            frame.pack(fill=tk.X, padx=20, pady=2)
+            
+            label = ttk.Label(frame, text=f"Trait {i}:", width=20, anchor="e", style="Gold.TLabel")
+            label.pack(side=tk.LEFT, padx=(0, 5))
+            
+            combo = ttk.Combobox(frame, width=18, style="Gold.TCombobox")
+            combo['values'] = self.trait_options
+            combo.set(trait if trait else "")
+            combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            self.trait_combos.append(combo)
         
         # Add complex attributes
         for complex_attr, sub_attrs in self.complex_character_attrs.items():
@@ -762,18 +1026,30 @@ class CITK2SaveEditor:
                 if any(key in attr for key in self.complex_character_attrs):
                     continue
                     
-                # Special handling for traits
+                # Special handling for traits (handled separately)
                 if attr == "traits":
-                    traits_str = entry.get()
-                    # Split and clean traits
-                    traits_list = [trait.strip() for trait in traits_str.split(",") if trait.strip()]
-                    char_data[attr] = traits_list
                     continue
                     
                 # Get value based on widget type
                 if isinstance(entry, ttk.Checkbutton):
                     value = entry.var.get()
-                else:
+                elif isinstance(entry, ttk.Combobox):
+                    value = entry.get()
+                    # Convert to appropriate type if needed
+                    if value == "null":
+                        value = None
+                    elif value.lower() == "true":
+                        value = True
+                    elif value.lower() == "false":
+                        value = False
+                    elif value.isdigit():
+                        value = int(value)
+                    else:
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            pass  # Keep as string
+                else:  # Regular entry
                     value_str = entry.get()
                     if value_str == "null":
                         value = None
@@ -792,6 +1068,14 @@ class CITK2SaveEditor:
                 
                 # Update data
                 char_data[attr] = value
+            
+            # Update traits from combo boxes
+            traits_list = []
+            for combo in self.trait_combos:
+                trait = combo.get().strip()
+                if trait:  # Only add non-empty traits
+                    traits_list.append(trait)
+            char_data["traits"] = traits_list
             
             # Update complex attributes
             for complex_attr in self.complex_character_attrs:
@@ -812,6 +1096,182 @@ class CITK2SaveEditor:
             messagebox.showinfo("Success", f"{self.current_character} updated successfully!")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save character:\n{str(e)}")
+
+    # ====== NEW FUNCTIONS FOR ACTION BUTTONS ======
+    
+    def loyal_to_cause(self):
+        """Set loyalty variables to 100"""
+        loyal_vars = [
+            "specialServicesLoyalty", 
+            "militaryStaffLoyalty", 
+            "armyStaffLoyalty", 
+            "intelligentsiaLoyalty"
+        ]
+        
+        for var in loyal_vars:
+            if var in self.entries:
+                self.entries[var].delete(0, tk.END)
+                self.entries[var].insert(0, "100")
+        
+        messagebox.showinfo("Loyal to the Cause", "Loyalty variables set to 100!")
+
+    def clear_debt(self):
+        """Set all loan variables to 0"""
+        debt_vars = ["usLoan", "fraLoan", "imfLoan"]
+        
+        for var in debt_vars:
+            if var in self.entries:
+                self.entries[var].delete(0, tk.END)
+                self.entries[var].insert(0, "0")
+        
+        messagebox.showinfo("Clear Debt", "All loans cleared!")
+
+    def fall_of_usa(self):
+        """Set American variables to 0"""
+        usa_vars = [
+            "americanArmyLevel", 
+            "americanEconomyLevel", 
+            "americanPopularHappiness"
+        ]
+        
+        for var in usa_vars:
+            if var in self.entries:
+                self.entries[var].delete(0, tk.END)
+                self.entries[var].insert(0, "0")
+        
+        messagebox.showinfo("Fall of the USA", "American variables set to 0!")
+        
+    def scientific_breakthrough(self):
+        """Set all technology points to 1000"""
+        if not self.data or "technologies" not in self.data:
+            messagebox.showwarning("Warning", "No technology data available")
+            return
+            
+        try:
+            # Iterate through all technology categories
+            for category, tech_list in self.data["technologies"].items():
+                # Iterate through each technology level in the category
+                for tech in tech_list:
+                    # Set all point types to 1000
+                    if "investedCost" in tech:
+                        tech["investedCost"] = {
+                            "militaryPoints": 1000,
+                            "physicPoints": 1000,
+                            "cyberneticPoints": 1000,
+                            "civilPoints": 1000
+                        }
+            
+            messagebox.showinfo("Scientific Breakthrough", 
+                               "All technology points set to 1000!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update technologies:\n{str(e)}")
+
+    def diplomatic_superparty(self):
+        """Set relationshipWithPlayer to 100 for all active countries"""
+        if not self.data or "countries" not in self.data:
+            messagebox.showwarning("Warning", "No country data available")
+            return
+            
+        count = 0
+        for country_tag, country_data in self.data["countries"].items():
+            if country_data.get("activeInGame", False):
+                if "relationshipWithPlayer" in country_data:
+                    country_data["relationshipWithPlayer"] = 100
+                    count += 1
+        
+        messagebox.showinfo("Diplomatic Superparty", 
+                           f"Set relationship to 100 for {count} active countries!")
+
+    def mass_alignment(self):
+        """Set foreignPolicyVector to 100 for all active countries"""
+        if not self.data or "countries" not in self.data:
+            messagebox.showwarning("Warning", "No country data available")
+            return
+            
+        count = 0
+        for country_tag, country_data in self.data["countries"].items():
+            if country_data.get("activeInGame", False):
+                if "foreignPolicyVector" in country_data:
+                    country_data["foreignPolicyVector"] = 100
+                    count += 1
+        
+        messagebox.showinfo("Mass Alignment", 
+                           f"Set foreign policy to 100 for {count} active countries!")
+
+    def liberalization_vector_0(self):
+        """Set liberalizationVector to 0 for all active countries"""
+        if not self.data or "countries" not in self.data:
+            messagebox.showwarning("Warning", "No country data available")
+            return
+            
+        count = 0
+        for country_tag, country_data in self.data["countries"].items():
+            if country_data.get("activeInGame", False):
+                if "liberalizationVector" in country_data:
+                    country_data["liberalizationVector"] = 0
+                    count += 1
+        
+        messagebox.showinfo("Liberalization Vector 0", 
+                           f"Set liberalization to 0 for {count} active countries!")
+        
+    def liberalization_vector_100(self):
+        """Set liberalizationVector to 100 for all active countries"""
+        if not self.data or "countries" not in self.data:
+            messagebox.showwarning("Warning", "No country data available")
+            return
+            
+        count = 0
+        for country_tag, country_data in self.data["countries"].items():
+            if country_data.get("activeInGame", False):
+                if "liberalizationVector" in country_data:
+                    country_data["liberalizationVector"] = 100
+                    count += 1
+        
+        messagebox.showinfo("Liberalization Vector 190", 
+                           f"Set liberalization to 100 for {count} active countries!")
+
+    def set_character_status(self, status):
+        """Set status for the selected character"""
+        if not self.current_character or not self.data:
+            messagebox.showwarning("Warning", "No character selected")
+            return
+            
+        if "characters" not in self.data or self.current_character not in self.data["characters"]:
+            messagebox.showwarning("Warning", "Character data not available")
+            return
+            
+        # Update the status
+        char_data = self.data["characters"][self.current_character]
+        char_data["status"] = status
+        
+        # Update the UI if we're currently editing this character
+        if "status" in self.character_entries:
+            self.character_entries["status"].set(status)
+        
+        messagebox.showinfo("Status Changed", 
+                           f"{self.current_character} status set to {status}!")
+
+    def set_character_power(self, power_value):
+        """Set power for the selected character"""
+        if not self.current_character or not self.data:
+            messagebox.showwarning("Warning", "No character selected")
+            return
+            
+        if "characters" not in self.data or self.current_character not in self.data["characters"]:
+            messagebox.showwarning("Warning", "Character data not available")
+            return
+            
+        # Update the power
+        char_data = self.data["characters"][self.current_character]
+        char_data["power"] = power_value
+        
+        # Update the UI if we're currently editing this character
+        if "power" in self.character_entries:
+            self.character_entries["power"].delete(0, tk.END)
+            self.character_entries["power"].insert(0, str(power_value))
+        
+        messagebox.showinfo("Power Changed", 
+                           f"{self.current_character} power set to {power_value}!")
 
 if __name__ == "__main__":
     root = tk.Tk()
