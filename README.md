@@ -39,3 +39,5 @@ Functionalities:
    Empower: set selected character's power to 100
    
    Isolate: set selected character's power to 0
+
+   Supreme Leader: set all relationships to you to 100
