@@ -10,7 +10,7 @@ class CITK2SaveEditor:
         self.root = root
         self.root.title("Crisis in the Kremlin 2 Save Editor")
         self.root.geometry("1400x800")
-        self.root.minsize(1200, 700)  # Set minimum size
+        self.root.minsize(1200, 700)
         self.root.configure(bg="#8B0000")
         
         # Define variables and their display names
@@ -94,6 +94,7 @@ class CITK2SaveEditor:
         self.original_content = ""
         self.current_country = None
         self.current_character = None
+        self.json_match = None  # Store JSON match for exact replacement
 
     def create_widgets(self):
         # Configure styles
@@ -512,6 +513,15 @@ class CITK2SaveEditor:
         )
         isolate_btn.pack(fill=tk.X, padx=2, pady=2)
         
+        # NEW: Supreme Leader button between Isolate and Save Character Changes
+        supreme_btn = ttk.Button(
+            char_actions_frame, 
+            text="Supreme Leader", 
+            command=self.supreme_leader,
+            style="Gold.TButton"
+        )
+        supreme_btn.pack(fill=tk.X, padx=2, pady=2)
+        
         # Save character button
         save_btn = ttk.Button(
             char_actions_frame, 
@@ -647,6 +657,7 @@ class CITK2SaveEditor:
             self.data = data  # Store entire data
             self.original_content = content  # Store original content
             self.current_file = file_path
+            self.json_match = match  # Store regex match for exact replacement
             
             # Populate main variables
             for var_id in self.variables:
@@ -701,8 +712,14 @@ class CITK2SaveEditor:
             # Convert data back to JSON
             new_json = json.dumps(self.data, separators=(',', ':'), indent=None)
             
-            # Replace JSON portion in content
-            new_content = re.sub(r"{.*}", new_json, self.original_content, flags=re.DOTALL)
+            # Replace JSON portion in content using exact match
+            if self.json_match:
+                new_content = self.original_content.replace(
+                    self.json_match.group(0), new_json
+                )
+            else:
+                # Fallback to regex if match not stored
+                new_content = re.sub(r"{.*}", new_json, self.original_content, flags=re.DOTALL)
             
             # Write back to file
             with open(self.current_file, "w", encoding="utf-8") as f:
@@ -858,11 +875,13 @@ class CITK2SaveEditor:
                     if entry_key not in self.country_entries:
                         continue
                         
+                    value_str = self.country_entries[entry_key].get()
                     try:
-                        value = float(self.country_entries[entry_key].get())
+                        # Convert to float only if contains decimal
+                        value = float(value_str) if '.' in value_str else int(value_str)
                         country_data[complex_attr][sub_attr] = value
-                    except ValueError:
-                        pass  # Keep original value if invalid
+                    except (ValueError, TypeError):
+                        pass  # Keep original value on error
             
             messagebox.showinfo("Success", f"{self.current_country} updated successfully!")
         except Exception as e:
@@ -949,7 +968,7 @@ class CITK2SaveEditor:
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self.character_entries[attr] = entry
         
-        # Add traits section with four combo boxes
+        # Add traits section with combo boxes
         traits_frame = ttk.Frame(self.character_attr_frame, style="Gold.TFrame")
         traits_frame.pack(fill=tk.X, padx=5, pady=5)
         ttk.Label(
@@ -962,12 +981,7 @@ class CITK2SaveEditor:
         self.trait_combos = []
         traits = char_data.get("traits", [])
         
-        # Ensure we have exactly 4 traits (pad with empty if needed)
-        if len(traits) < 4:
-            traits += [""] * (4 - len(traits))
-        elif len(traits) > 4:
-            traits = traits[:4]
-        
+        # Create combo boxes only for existing traits
         for i, trait in enumerate(traits, 1):
             frame = ttk.Frame(self.character_attr_frame, style="Red.TFrame")
             frame.pack(fill=tk.X, padx=20, pady=2)
@@ -1069,7 +1083,7 @@ class CITK2SaveEditor:
                 # Update data
                 char_data[attr] = value
             
-            # Update traits from combo boxes
+            # Update traits from combo boxes - filter out empty values
             traits_list = []
             for combo in self.trait_combos:
                 trait = combo.get().strip()
@@ -1087,11 +1101,13 @@ class CITK2SaveEditor:
                     if entry_key not in self.character_entries:
                         continue
                         
+                    value_str = self.character_entries[entry_key].get()
                     try:
-                        value = float(self.character_entries[entry_key].get())
+                        # Convert to float only if contains decimal
+                        value = float(value_str) if '.' in value_str else int(value_str)
                         char_data[complex_attr][sub_attr] = value
-                    except ValueError:
-                        pass  # Keep original value if invalid
+                    except (ValueError, TypeError):
+                        pass  # Keep original value on error
             
             messagebox.showinfo("Success", f"{self.current_character} updated successfully!")
         except Exception as e:
@@ -1227,7 +1243,7 @@ class CITK2SaveEditor:
                     country_data["liberalizationVector"] = 100
                     count += 1
         
-        messagebox.showinfo("Liberalization Vector 190", 
+        messagebox.showinfo("Liberalization Vector 100", 
                            f"Set liberalization to 100 for {count} active countries!")
 
     def set_character_status(self, status):
@@ -1272,6 +1288,22 @@ class CITK2SaveEditor:
         
         messagebox.showinfo("Power Changed", 
                            f"{self.current_character} power set to {power_value}!")
+    
+    # NEW: Supreme Leader function
+    def supreme_leader(self):
+        """Set all characters' relations to player to 100"""
+        if not self.data or "characters" not in self.data:
+            messagebox.showwarning("Warning", "No character data available")
+            return
+            
+        count = 0
+        for char_name, char_data in self.data["characters"].items():
+            if "relationsToPlayer" in char_data:
+                char_data["relationsToPlayer"] = 100
+                count += 1
+        
+        messagebox.showinfo("Supreme Leader", 
+                           f"Set relations to 100 for {count} characters!")
 
 if __name__ == "__main__":
     root = tk.Tk()
