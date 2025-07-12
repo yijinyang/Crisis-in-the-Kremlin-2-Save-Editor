@@ -74,7 +74,8 @@ class CITK2SaveEditor:
         }
         self.complex_character_attrs = {
             'charLevel': ['Diplomacy', 'Intrigue', 'Thrift'],
-            'charExp': ['Diplomacy', 'Intrigue', 'Thrift']
+            'charExp': ['Diplomacy', 'Intrigue', 'Thrift'],
+            'customCharacterInfo': ['politicName', 'politicSurname', 'pictureNumber', 'wasEnoughPoints']
         }
         
         # Define possible values for combo boxes
@@ -709,8 +710,8 @@ class CITK2SaveEditor:
                 else:
                     self.data[var_id] = float(value)
             
-            # Convert data back to JSON
-            new_json = json.dumps(self.data, separators=(',', ':'), indent=None)
+            # Convert data back to JSON with ensure_ascii=False to preserve Russian characters
+            new_json = json.dumps(self.data, separators=(',', ':'), indent=None, ensure_ascii=False)
             
             # Replace JSON portion in content using exact match
             if self.json_match:
@@ -724,7 +725,7 @@ class CITK2SaveEditor:
             # Write back to file
             with open(self.current_file, "w", encoding="utf-8") as f:
                 f.write(new_content)
-            
+        
             messagebox.showinfo("Success", f"Comrade! File saved successfully!\nBackup created at {backup_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save file:\n{str(e)}")
@@ -1027,10 +1028,19 @@ class CITK2SaveEditor:
                 label = ttk.Label(frame, text=f"{sub_attr}:", width=20, anchor="e", style="Gold.TLabel")
                 label.pack(side=tk.LEFT, padx=(0, 5))
                 
-                # Create entry
-                sub_value = char_data[complex_attr].get(sub_attr, 0)
-                entry = ttk.Entry(frame, width=15, style="Gold.TEntry")
-                entry.insert(0, str(sub_value))
+                # Create appropriate widget based on sub-attribute type
+                sub_value = char_data[complex_attr].get(sub_attr, "")
+                
+                if complex_attr == "customCharacterInfo" and sub_attr == "wasEnoughPoints":
+                    # Create checkbox for boolean value
+                    var = tk.BooleanVar(value=sub_value)
+                    entry = ttk.Checkbutton(frame, variable=var, style="Gold.TCheckbutton")
+                    entry.var = var
+                else:
+                    # Create entry for other values
+                    entry = ttk.Entry(frame, width=15, style="Gold.TEntry")
+                    entry.insert(0, str(sub_value))
+                
                 entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                 self.character_entries[f"{complex_attr}_{sub_attr}"] = entry
 
@@ -1125,13 +1135,35 @@ class CITK2SaveEditor:
                     if entry_key not in self.character_entries:
                         continue
                         
-                    value_str = self.character_entries[entry_key].get()
-                    try:
-                        # Convert to float only if contains decimal
-                        value = float(value_str) if '.' in value_str else int(value_str)
-                        char_data[complex_attr][sub_attr] = value
-                    except (ValueError, TypeError):
-                        pass  # Keep original value on error
+                    # Get value based on widget type
+                    entry = self.character_entries[entry_key]
+                    
+                    if isinstance(entry, ttk.Checkbutton):
+                        # Checkbox value
+                        value = entry.var.get()
+                    else:
+                        # Entry value
+                        value_str = entry.get()
+                        if complex_attr == "customCharacterInfo":
+                            # Special handling for customCharacterInfo types
+                            if sub_attr == "wasEnoughPoints":
+                                value = value_str.lower() in ['true', '1']
+                            elif sub_attr == "pictureNumber":
+                                try:
+                                    value = int(value_str)
+                                except (ValueError, TypeError):
+                                    value = 0
+                            else:
+                                value = value_str  # Keep as string for name/surname
+                        else:
+                            try:
+                                # Convert to float only if contains decimal
+                                value = float(value_str) if '.' in value_str else int(value_str)
+                            except (ValueError, TypeError):
+                                value = value_str  # Keep as string on error
+                    
+                    # Update the complex attribute
+                    char_data[complex_attr][sub_attr] = value
             
             messagebox.showinfo("Success", f"{self.current_character} updated successfully!")
         except Exception as e:
