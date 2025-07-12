@@ -81,7 +81,7 @@ class CITK2SaveEditor:
         self.country_options = ["Russia", "Ukraine", "Belarus", "Kazakhstan", "Uzbekistan", "Georgia", "Azerbaijan", "Lithuania", "Estonia", "Latvia", "Moldova", "Kyrgyzstan", "Tajikistan", "Armenia", "Turkmenistan"]
         self.position_options = ["ChairmanOfTheSupremeCouncil", "SecondSecretary", "ChairmanOfTheCouncilOfMinisters", "ForeignSecretary", "ChairmanOfTheKGB", "MinisterOfDefense", "MinisterOfIndustry", "MinisterForYouthAffairs", "MinisterOfFinance", "GRU", "MinisterOfAgriculture", "MinisterOfEducation", "MinisterOfInternalAffairs",None]
         self.status_options = ["Alive", "Dead", "Imprisoned", "Exiled", "Retired"]
-        self.trait_options = ["ProReformist", "Compromise", "GlasnostActivist", "Schemer", "ProModerate", "Partocrat", "InefficientManager", "Atlantophobe", "Unambitious", "Uncompromising", "ProNationalDemocrat", "Monarchist", "Voluntarist", "Economical", "StrongArm", "Peoplefavorite", "EffectiveManager", "Hedonist", "Chauvinist", "ProMarket", "Ascetic", "Industrialist", "Idealist", "Peaceful", "Atlantophile", "ProLiberalDemocrat", "Technocrat", "Orientalist", "NuclearScientist", "ConspiracyTheorist", "Radical", "Intelligent", "ProConservative", "RocketBuilder", "ProNeostalinist", "ProSocialPatriot", "Dissident", "Maoist", "ProNeotrotskist"]
+        self.trait_options = ["Ascetic", "Atlantophile", "Atlantophobe", "Chauvinist", "Compromise", "ConspiracyTheorist", "Dissident", "Economical", "EffectiveManager", "GlasnostActivist", "Hedonist", "Idealist", "InefficientManager", "Industrialist", "Intelligent", "Maoist", "Monarchist", "NuclearScientist", "Orientalist", "Partocrat", "Peaceful", "Peoplefavorite", "ProConservative", "ProLiberalDemocrat", "ProMarket", "ProNationalDemocrat", "ProNeostalinist", "ProNeotrotskist", "ProReformist", "ProSocialPatriot", "Radical", "RocketBuilder", "Schemer", "StrongArm", "Technocrat", "Unambitious", "Uncompromising", "Voluntarist"]
         
         # Create GUI elements
         self.create_widgets()
@@ -958,6 +958,14 @@ class CITK2SaveEditor:
             elif attr == "traits":
                 # Skip here, handle separately below
                 continue
+            elif attr == "knownTraitors":
+                # Convert list to comma-separated string
+                if isinstance(value, list):
+                    value_str = ",".join(map(str, value))
+                else:
+                    value_str = str(value)
+                entry = ttk.Entry(frame, width=20, style="Gold.TEntry")
+                entry.insert(0, value_str)
             elif value is None:
                 entry = ttk.Entry(frame, width=20, style="Gold.TEntry")
                 entry.insert(0, "null")
@@ -1044,6 +1052,22 @@ class CITK2SaveEditor:
                 if attr == "traits":
                     continue
                     
+                # Handle knownTraitors as comma-separated list to prevent issues
+                if attr == "knownTraitors":
+                    value_str = entry.get()
+                    if value_str == "null":
+                        value = None
+                    elif value_str == "":
+                        value = []
+                    else:
+                        try:
+                            # Convert comma-separated string back to list of integers
+                            value = [int(x.strip()) for x in value_str.split(",") if x.strip()]
+                        except ValueError:
+                            value = []
+                    char_data[attr] = value
+                    continue
+                    
                 # Get value based on widget type
                 if isinstance(entry, ttk.Checkbutton):
                     value = entry.var.get()
@@ -1113,7 +1137,7 @@ class CITK2SaveEditor:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save character:\n{str(e)}")
 
-    # ====== NEW FUNCTIONS FOR ACTION BUTTONS ======
+    # ====== FUNCTIONS FOR ACTION BUTTONS ======
     
     def loyal_to_cause(self):
         """Set loyalty variables to 100"""
@@ -1289,7 +1313,6 @@ class CITK2SaveEditor:
         messagebox.showinfo("Power Changed", 
                            f"{self.current_character} power set to {power_value}!")
     
-    # NEW: Supreme Leader function
     def supreme_leader(self):
         """Set all characters' relations to player to 100"""
         if not self.data or "characters" not in self.data:
